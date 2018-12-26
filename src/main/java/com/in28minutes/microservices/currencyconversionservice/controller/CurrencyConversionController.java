@@ -1,6 +1,8 @@
 package com.in28minutes.microservices.currencyconversionservice.controller;
 
+import com.in28minutes.microservices.currencyconversionservice.client.CurrencyExchangeServiceProxy;
 import com.in28minutes.microservices.currencyconversionservice.entity.CurrencyConversionBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,6 +15,8 @@ import java.util.Map;
 
 @RestController
 public class CurrencyConversionController {
+    @Autowired
+    private CurrencyExchangeServiceProxy currencyExchangeServiceProxy;
 
     @GetMapping(value = "/currency-converter/from/{from}/to/{to}/quantity/{quantity}")
     public CurrencyConversionBean convertCurrency(@PathVariable String from, @PathVariable String to,
@@ -24,6 +28,19 @@ public class CurrencyConversionController {
                 CurrencyConversionBean.class,
                 uriVariables);
         CurrencyConversionBean response = responseEntity.getBody();
+
+        CurrencyConversionBean currencyConversionBean = new CurrencyConversionBean(response.getId(), from, to,
+                response.getConversionMultiple(), quantity,
+                quantity.multiply(response.getConversionMultiple()),
+                8000);
+        return currencyConversionBean;
+    }
+
+    @GetMapping(value = "/currency-converter-feign/from/{from}/to/{to}/quantity/{quantity}")
+    public CurrencyConversionBean convertCurrencyFeign(@PathVariable String from, @PathVariable String to,
+                                                  @PathVariable BigDecimal quantity){
+
+        CurrencyConversionBean response = currencyExchangeServiceProxy.retrieveExchangeValue(from, to);
 
         CurrencyConversionBean currencyConversionBean = new CurrencyConversionBean(response.getId(), from, to,
                 response.getConversionMultiple(), quantity,
